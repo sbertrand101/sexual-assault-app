@@ -1,0 +1,30 @@
+{
+  "name": "node-express102",
+  "version": "1.0.0",
+  "description": "practice playground",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo ‘no test yet’",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "helps",
+    "npm",
+    "find",
+    "your",
+    "package",
+    "when",
+    "people",
+    "search",
+    "for",
+    "the",
+    "keywords"
+  ],
+  "author": "Stephanie Bertrand",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "express": "^4.15.3",
+    "node-bandwidth": "^2.3.2"
+  }
+}
