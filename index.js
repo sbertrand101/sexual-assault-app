@@ -27,6 +27,10 @@ app.get("/", function(req, res){				//at certain address, takes in request and r
 	res.send("SEXUAL ASSAULT HELPLINE");
 });
 
+http.listen(app.get('port'), function(){
+	console.log('listening on *:' + app.get('port'));
+});
+
 var callerId;
 var i = 0;
 
@@ -70,7 +74,6 @@ app.post("/call-callback", function (req, result){
 			console.log("Couldn't speak intro sentence")
 		});
 	}
-
 	else if (body.eventType === "speak" && body.state === "PLAYBACK_STOP"){
 		
 		return client.Call.enableRecording(body.callId)
@@ -220,9 +223,7 @@ var sendMessage = function(params){
 	});
 }
 
-http.listen(app.get('port'), function(){
-	console.log('listening on *:' + app.get('port'));
-});
+
 
 
 
