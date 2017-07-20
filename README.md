@@ -10,12 +10,12 @@ When a survivor calls in, they are prompted with a series of questions to collec
 * Transcribing
 * Outbound text messaging
 
-### Prerequisites
+## Prerequisites
 * Bandwidth Catapult Account
 * Node 8.0+
 * Ngrok or another port forwarding app
 
-#### Making the App
+## Making the App
 The first code needed for this hotline number app is structure to insert the Bandwidth Catapult Account credentials.
 
 ```javascript
