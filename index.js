@@ -17,8 +17,6 @@ var client = new Bandwidth({
 	apiSecret : process.env.BANDWIDTH_API_SECRET
 });
 
-var db = {};
-
 app.use(bodyParser.json());
 app.set('port', (process.env.PORT || 3000));
 
@@ -33,6 +31,7 @@ http.listen(app.get('port'), function(){
 
 var callerId;
 var i = 0;
+var db = {};
 
 app.post("/call-callback", function (req, result){
 

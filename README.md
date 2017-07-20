@@ -49,34 +49,35 @@ http.listen(app.get('port'), function(){
 Use Bandwidth’s API so it can accept incoming calls.
 
 ```javascript
-app.post("/call-callback", function (req, result){
 
-	var body = req.body;
-	result.sendStatus(200); 						//letting the invoker sending the push request say 'we're good' 
+var callerId;
+var i = 0;
+var db = {};
+
+app.post("/call-callback", function (req, result){		
+	result.sendStatus(200);		//Send status 200 when a request is received and executed successfully
 
 	var numbers = {
-	to   : callerId,
-	from : "+13365936477"
+	to   : callerId,			//Caller's phone number
+	from : "+13365936477" 		//YOUR HOTLINE NUMBER HERE (ie. sexual assault hotline number)
 	};
 
-	//1 sentences
-	var sentence = [
-		'This is a hotline number for sexual assault cases.  Our aim is to help collect evidence. A transciription of the call will be sent to you when you hang up. Please answer the questions as descriptively as you can. Please state your full name, and a number to reach you by. When finished, please press 1.',
-		
-		'Where did the assault occur? When finished, please press 1',
-		
-		'What happened? This is the final question. When finished, please press 1.'
+	var sentence = [			//Sentences spoken to caller
+		'Sentence 1',
+		'Sentence 2',
+		'Sentence 3'
 	]
 
+	var body = req.body;
 
-	if(body.eventType === "incomingcall"){
+	if(body.eventType === "incomingcall"){  
 		callerId = body.from;
 		db[body.callId] = {};
 		db[body.callId].from = body.from;
-		db[body.callId].recordings = [];
+		db[body.callId].recordings = [];	
 		console.log(db);
 	}
-	else if (body.eventType === "answer"){
+	else if (body.eventType === "answer"){		//When the hotline number automatically answers, speak sentence[i]
 		client.Call.speakSentence(body.callId, sentence[i])
 		.then(function (res) {
 			console.log(body);
@@ -89,4 +90,138 @@ app.post("/call-callback", function (req, result){
 			console.log("Couldn't speak intro sentence")
 		});
 	}
+
 ```
+
+Enable recording so Bandwidth can capture the caller's responses to each sentence spoken.
+
+```javascript
+	else if (body.eventType === "speak" && body.state === "PLAYBACK_STOP"){
+		
+		return client.Call.enableRecording(body.callId)				//enable recording after sentence is spoken
+		.then(function (res) {
+			console.log("---------Recording---------");
+		})
+		.catch(function(err){
+			console.log(err);
+			console.log("Wasn't able to start recording");
+		});
+	}
+	else if (body.eventType === "dtmf" && body.dtmfDigit === "1" && i<sentence.length){
+		return client.Call.disableRecording(body.callId)			//after '1' is pressed by the caller, stop recording
+		.then(function (res) {										
+			console.log(body);
+			console.log(res);
+			console.log("-----Recording disabled and ended----")
+			return res;												
+		})
+		.catch(function(err){
+			console.log("Recording not turned off, still running")
+		});
+	}	
+```
+
+When the last sentence is spoken, enable 'transcription' so all recordings can get transcribed
+
+```javascript
+	else if (body.eventType === "dtmf" && body.dtmfDigit === "1"){
+		client.Call.hangup(body.callId)
+		.then(function () {
+			console.log("----Call has been hungup---")
+		})
+		.then(function(res){
+			return client.Call.getRecordings(body.callId)
+			.then(function (recordings) {
+				console.log("-----Printing the list of Recordings----")
+				console.log(recordings);
+				console.log("-----Done Printing the list of Recordings----")
+				var transcriptionIdPromises = [];
+				if(recordings.length > 1){
+					for(var i=1; i<recordings.length; i++){
+						for(var j=0; j<i; j++){
+							var hold = recordings[j];
+							if(recordings[i].endTime<recordings[j].endTime){
+								recording[i] = recording[j];
+								for(var k = i; k<j+1; k--){
+									recordings[k] = recordings[k-1];
+								}
+								recordings[j+1]=hold;
+							}
+							break;
+						}
+					}
+				}
+				for (var i=0; i < recordings.length; i++){
+					var recordingId = recordings[i].id;
+					var myTranscriptionPromise = client.Recording.createTranscription(recordingId);
+					transcriptionIdPromises.push(myTranscriptionPromise)
+				}
+				return Promise.all(transcriptionIdPromises);
+			})
+			.then(function(listOfTranscriptionIds) {
+				console.log("-----Printing the list of transcription ids----")
+				for (var i = 0; i< listOfTranscriptionIds.length; i++) {
+					console.log(listOfTranscriptionIds[i]);
+				}
+				console.log("-----Done Printing the list of transcription ids----")
+			})
+			.then(function(){
+				console.log("----Printing list of transcriptions-----");
+				for (var i = 0; i < recordings.length; i++){
+					var recordingId = recordings[id].id;
+					client.Recording.getTranscriptions(recordingId)
+					.then(function(transcriptions){
+					});
+				}
+			})
+	
+		})
+		.catch(function(err){
+			console.log("Call could not be hung up")
+		});
+	}
+```
+
+Now that we have the transcriptions, we want to be able to send them via text back to the caller.  First, create the methods to send a text message.
+
+```javascript
+	var messagePrinter = function (message){
+	console.log('Using the message printer');
+	console.log(message);
+}
+
+var sendMessage = function(params){
+	return client.Message.send({
+		from : params.from,
+		to   : params.to,
+		text : params.text
+	})
+	.then(function(message){
+		messagePrinter(message);							//Print message sent
+		return client.Message.get(message.id); 				//Get message id
+	})
+	.then(messagePrinter)						
+	.catch(function(err){
+		console.log(err);
+	});
+}
+``` 
+
+Finally, when the phone is hung up, use the text-messaging methods above to send the transcriptions to the caller. Add these else-if statements to the ones listed before.
+
+```javascript
+	else if(body.eventType === "hangup"){
+		numbers.text = numbers.text + "\n Date: " + body.time;		
+		sendMessage(numbers); 											
+	}
+	else if(body.direction === "out" && body.state === "sending"){
+		numbers.text = "Would you like to send this transcript to the police? \n yes/no";
+		sendMessage(numbers);
+	}			
+	else{																
+		console.log(body);
+		console.log("------JUST PRINTED BODY--------");
+	}
+});
+```
+
