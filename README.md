@@ -220,7 +220,7 @@ Finally, when the phone is hung up, use the text-messaging methods above to send
 	}			
 	else{																
 		console.log(body);
-		console.log("------JUST PRINTED BODY--------");
+		console.log("------Current State--------");
 	}
 });
 ```
