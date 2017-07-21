@@ -1,4 +1,4 @@
-# Sexual-assault-app
+# Bastet
 
 This app, created using Bandwidth’s API, is a hotline number that serves to make sexual assault survivors feel more comfortable when reporting their assault.  
 When a survivor calls in, they are prompted with a series of questions to collect as much knowledge and evidence about the incident as possible. They are then given suggestions about what else they can do to help build their case.  When the call is ended, a transcript of the call is sent to the survivor via text message or email, and at any time, they can submit this information to the police and create a police report.
